@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TUGLOW.VE | Beauty & Cosmetics Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div id="app">
+    <div id="sidebar">
+        <div class="brand">
+            <div class="brand-title">TUGLOW.VE</div>
+            <div class="brand-sub">Beauty Studio &amp; Cosmetics</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">General</div>
+            <div class="nav-item active" onclick="nav('dashboard', event)">▣ Dashboard</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Comercial</div>
+            <div class="nav-item" onclick="nav('ventas', event)">◈ Ventas y Cobranzas</div>
+            <div class="nav-item" onclick="nav('clientes', event)">◎ Clientes</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Catálogo</div>
+            <div class="nav-item" onclick="nav('inventario', event)">▦ Inventario</div>
+        </div>
+
+        <div class="nav-section" style="padding: 16px;">
+            <button class="btn btn-primary" style="width:100%; margin-bottom:10px; background:#374130;" onclick="abrirCrear()">+ Nuevo Registro</button>
+            <button class="btn btn-secondary" style="width:100%; margin-bottom:6px; background:rgba(255,255,255,0.1); color:#FFF; border-color:transparent;" onclick="exportarCSV()">📥 Exportar CSV</button>
+            <button class="btn btn-secondary" style="width:100%; background:rgba(255,255,255,0.1); color:#FFF; border-color:transparent;" onclick="document.getElementById('fileIn').click()">📂 Importar CSV</button>
+            <input type="file" id="fileIn" style="display:none" accept=".csv" onchange="importarCSV(this)">
+        </div>
+    </div>
+
+    <div id="main">
+        <div id="topbar">
+            <div id="page-title">Dashboard</div>
+            <div style="font-size: 12px; color: var(--c-text-muted)" id="top-date"></div>
+        </div>
+
+        <div id="content">
+            <div id="page-dashboard" class="page active">
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Ingresos Reales</div>
+                        <div class="metric-value" id="dash-ingresos" style="color: var(--c-success)">$0.00</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Por Cobrar (Deudas)</div>
+                        <div class="metric-value" style="color: var(--c-danger)" id="dash-deuda">$0.00</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Ventas Realizadas</div>
+                        <div class="metric-value" id="dash-vcount">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Productos Stock Bajo</div>
+                        <div class="metric-value" style="color: var(--c-warning)" id="dash-stock">0</div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="modal-head" style="border:none"><h3 style="font-size:16px">Últimas Ventas Registradas</h3></div>
+                    <table>
+                        <thead><tr><th>Fecha / Cliente</th><th>Total</th><th>Abonado</th><th>Estatus</th></tr></thead>
+                        <tbody id="body-dash-ventas"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-ventas" class="page" style="display:none">
+                <div id="filtro-container" style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-bottom:16px;">
+                    <label style="margin-bottom:0; font-size:12px; color:var(--c-text-muted);">Filtrar por estatus:</label>
+                    <select id="filter-ventas" onchange="renderTable()" style="width:220px; margin-bottom:0;">
+                        <option value="todas">Ver Todas las Ventas</option>
+                        <option value="nopagadas">Pendientes / Con Deuda</option>
+                        <option value="pagadas">Pagadas Completamente</option>
+                    </select>
+                </div>
+
+                <div class="section-card">
+                    <table>
+                        <thead><tr id="headers"></tr></thead>
+                        <tbody id="body-datos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-form">
+    <div class="modal">
+        <div class="modal-head"><h3 id="form-title">Nuevo Registro</h3><button class="btn btn-secondary" onclick="cerrarModal()">✕</button></div>
+        <div class="modal-body" id="form-body"></div>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarRegistro()">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-acciones">
+    <div class="modal">
+        <div class="modal-head"><h3>Gestión de Venta y Cobro</h3><button class="btn btn-secondary" onclick="cerrarModal()">✕</button></div>
+        <div class="modal-body">
+            <div id="v-info" style="background:var(--c-card-header); padding:16px; border-radius:8px; margin-bottom:16px; font-size:13px"></div>
+
+            <div style="border:1px solid var(--c-border); padding:16px; border-radius:8px; margin-bottom:16px; background:var(--c-card)">
+                <label>Registrar Abono ($):</label><input type="number" id="abono-monto" min="0.01" step="0.01" placeholder="0.00">
+                <label>Fecha de Pago:</label><input type="date" id="abono-fecha">
+                <button class="btn btn-primary" style="width:100%" onclick="registrarPago()">+ Guardar Abono</button>
+            </div>
+
+            <div id="v-hist" style="margin-bottom:16px; max-height:120px; overflow-y:auto; font-size:12px;"></div>
+
+            <div style="display:flex; flex-direction:column; gap:8px">
+                <button class="btn btn-secondary" style="justify-content:center; background:#DCE8D7; border-color:#99B88E; color:#2E4726" onclick="abrirEditarVenta()">✏️ Editar Productos / Cliente</button>
+                <button class="btn btn-primary" style="background:#25D366; border-color:#20bd5a; justify-content:center" onclick="enviarWhatsApp()">📲 Enviar Estado por WhatsApp</button>
+                <button class="btn btn-secondary" style="justify-content:center" onclick="verNotaEntrega()">📄 Ver Nota / Factura</button>
+                <button class="btn btn-secondary" style="justify-content:center; color:var(--c-danger)" onclick="anularVenta()">Eliminar / Anular Venta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-nota">
+    <div class="modal" style="width:650px">
+        <div id="nota-print-area" class="print-document">
+            <div class="doc-header">
+                <div>
+                    <h1 style="font-family:var(--font-title); color:var(--c-sidebar-active); font-size:26px;">TUGLOW.VE</h1>
+                    <small style="color:var(--c-text-muted); font-weight:600;">Beauty Studio &amp; Cosmetics</small>
+                </div>
+                <div style="text-align: right;">
+                    <h2 style="font-size:16px; font-family:var(--font-title);">Comprobante de Venta</h2>
+                    <p id="n-folio" style="font-weight:bold; color:var(--c-sidebar-bg); font-size:12px;"></p>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-size:12px">
+                <div><b>CLIENTE:</b> <span id="n-cli"></span></div>
+                <div><b>FECHA:</b> <span id="n-fec"></span></div>
+            </div>
+            <table>
+                <thead><tr><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Subtotal</th></tr></thead>
+                <tbody id="n-body"></tbody>
+            </table>
+            <div style="margin-top:20px; text-align:right; font-weight:bold; font-size:14px; color:var(--c-text);">
+                Total Venta: <span id="n-total"></span>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-primary" onclick="imprimirDocumento('nota-print-area')">🖨️ Imprimir / Guardar PDF</button>
+            <button class="btn btn-secondary" onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
